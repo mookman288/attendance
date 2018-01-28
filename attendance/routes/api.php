@@ -11,6 +11,6 @@
 |
 */
 
-$router -> get('/', function () use ($router) {
-	return view('web', ['path' => $_SERVER['REQUEST_URI'], 'family' => []]);
+$router -> post('/api/people', function () use ($router) {
+
 });
