@@ -8,6 +8,10 @@
 		<style type="text/css">
 			/* https://stephanwagner.me/only-css-loading-spinner */
 
+			header {
+				margin-top: 2.00rem;
+			}
+
 			@keyframes loading {
 				to { transform: rotate(360deg); }
 			}
@@ -35,23 +39,30 @@
 	</head>
 	<body>
 		<main>
-			<header class="hero is-small is-primary">
-				<nav class="navbar is-fixed hero is-primary">
-					<ul class="navbar-brand">
-						<li class="navbar-item"><h1>Attendance</h1></li>
-						<li class="navbar-item"><button class="load button is-link" data-load="add-event">
+			<header class="">
+				<nav class="navbar is-fixed-top is-primary">
+					<div class="navbar-brand">
+						<h1 class="navbar-item">Attendance</h1>
+						<button class="button navbar-burger">
+							<span></span>
+							<span></span>
+							<span></span>
+						</button>
+					</div>
+					<ul class="navbar-menu">
+						<li class="navbar-item"><button class="load button is-link is-fullwidth" data-load="add-event">
 							Add Event
 						</button></li>
-						<li class="navbar-item"><button class="load button is-info" data-load="add-family">
+						<li class="navbar-item"><button class="load button is-info is-fullwidth" data-load="add-family">
 							Add Family
 						</button></li>
-						<li class="navbar-item"><button class="load button is-warning" data-load="edit-families">
+						<li class="navbar-item"><button class="load button is-warning is-fullwidth" data-load="edit-families">
 							Edit Families
 						</button></li>
-						<li class="navbar-item"><button class="load button is-info" data-load="add-people">
+						<li class="navbar-item"><button class="load button is-info is-fullwidth" data-load="add-people">
 							Add Person
 						</button></li>
-						<li class="navbar-item"><button class="load button is-warning" data-load="edit-people">
+						<li class="navbar-item"><button class="load button is-warning is-fullwidth" data-load="edit-people">
 							Edit People
 						</button></li>
 					</ul>
@@ -476,6 +487,10 @@
 							});
 						}
 				};
+
+				$('.navbar-burger').click(function() {
+					$('.navbar-menu').toggleClass('is-active');
+				});
 
 				$('.is-fullheight').css({position: 'fixed', top: 0, width: '100%', 'z-index': 5}).each(function() {
 					panels.moveOut($(this), function() {
