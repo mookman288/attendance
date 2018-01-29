@@ -45,13 +45,13 @@
 						<li class="navbar-item"><button class="load button is-info" data-load="add-family">
 							Add Family
 						</button></li>
-						<li class="navbar-item"><button class="load button is-warning" data-load="add-family">
+						<li class="navbar-item"><button class="load button is-warning" data-load="edit-families">
 							Edit Families
 						</button></li>
 						<li class="navbar-item"><button class="load button is-info" data-load="add-people">
 							Add Person
 						</button></li>
-						<li class="navbar-item"><button class="load button is-warning" data-load="add-family">
+						<li class="navbar-item"><button class="load button is-warning" data-load="edit-people">
 							Edit People
 						</button></li>
 					</ul>
@@ -174,59 +174,65 @@
 				<div class="people"></div>
 			</div>
 		</div>
-		<div id="edit-person" class="hero is-fullheight is-white is-invisible">
-			<div class="section">
-				<button class="delete button is-danger is-pulled-right">Close</button>
-				<h2 class="subtitle"></h2>
-				<form method="put" data-action="<?php printf("%s/api/people/", $path); ?>">
-					<div class="field">
-						<label for="person-name" class="label">Full Name</label>
-						<div class="control">
-							<input id="person-name" class="input" name="name" type="text" />
-						</div>
-					</div>
-					<div class="field">
-						<label for="person-family" class="label">Family</label>
-						<div class="control">
-							<div class="select">
-								<select id="person-family" name="family" class="input families">
-									<option value="">None</option>
-								</select>
+		<div id="edit-person" class="modal">
+			<div class="modal-background"></div>
+			<div class="modal-content">
+				<button class="modal-close is-large delete button is-danger" aria-label="close"></button>
+				<div class="box">
+					<h2 class="subtitle"></h2>
+					<form method="put" data-action="<?php printf("%s/api/people/", $path); ?>">
+						<div class="field">
+							<label for="person-name" class="label">Full Name</label>
+							<div class="control">
+								<input id="person-name" class="input" name="name" type="text" />
 							</div>
 						</div>
-					</div>
-					<div class="field is-grouped">
-						<div class="control">
-							<button class="button is-warning">Submit</button>
+						<div class="field">
+							<label for="person-family" class="label">Family</label>
+							<div class="control">
+								<div class="select">
+									<select id="person-family" name="family" class="input families">
+										<option value="">None</option>
+									</select>
+								</div>
+							</div>
 						</div>
-					</div>
-				</form>
+						<div class="field is-grouped">
+							<div class="control">
+								<button class="button is-warning">Edit</button>
+							</div>
+						</div>
+					</form>
+				</div>
 			</div>
 		</div>
 		<div id="edit-families" class="hero is-fullheight is-white is-invisible">
 			<div class="section">
-				<button class="delete button is-danger is-pulled-right">Close</button>
+				<button class="delete button is-danger is-pulled-right" aria-label="close"></button>
 				<h2 class="subtitle">Families</h2>
 				<div class="family"></div>
 			</div>
 		</div>
-		<div id="edit-family" class="hero is-fullheight is-white is-invisible">
-			<div class="section">
-				<button class="delete button is-danger is-pulled-right">Close</button>
-				<h2 class="subtitle"></h2>
-				<form method="post" data-action="<?php printf("%s/api/family/", $path); ?>">
-					<div class="field">
-						<label for="family-name" class="label">Last Name</label>
-						<div class="control">
-							<input id="family-name" class="input" name="name" type="text" />
+		<div id="edit-family" class="modal">
+			<div class="modal-background"></div>
+			<div class="modal-content">
+				<button class="modal-close is-large delete button is-danger" aria-label="close"></button>
+				<div class="box">
+					<h2 class="subtitle"></h2>
+					<form method="put" data-action="<?php printf("%s/api/family/", $path); ?>">
+						<div class="field">
+							<label for="family-name" class="label">Last Name</label>
+							<div class="control">
+								<input id="family-name" class="input" name="name" type="text" />
+							</div>
 						</div>
-					</div>
-					<div class="field is-grouped">
-						<div class="control">
-							<button class="button is-warning">Edit</button>
+						<div class="field is-grouped">
+							<div class="control">
+								<button class="button is-warning">Edit</button>
+							</div>
 						</div>
-					</div>
-				</form>
+					</form>
+				</div>
 			</div>
 		</div>
 		<div class="loading is-invisible hero is-fullheight"></div>
@@ -255,7 +261,7 @@
 						update: function() {
 							//Family.
 							$.ajax({
-								url: $('html').data('path') + '/api/family/',
+								url: $('html').data('path') + '/api/family',
 								type: 'GET',
 								beforeSend:	function() {
 									panels.moveIn($('.loading'));
@@ -265,7 +271,7 @@
 									$('select.families').append('<option value="">None</option>');
 									$.each(response.data, function(i, family) {
 										$('.family').append('<div class="card"><div class="card-content">' +
-												'<button class="load button is-link" data-load="edit-family" data-id="' +
+												'<button class="load button is-link is-pulled-right edit-family" data-id="' +
 												family.id + '">Edit</button><strong>' + family.name + '</strong></div></div>');
 
 										$('select.families').append('<option value="' + family.id + '">' + family.name +
@@ -277,9 +283,13 @@
 									panels.moveOut($('.loading'));
 
 									$('.edit-family').click(function() {
+										$('#edit-family').addClass('is-active').find('.modal-close').click(function() {
+											$('#edit-family').removeClass('is-active');
+										});
 										var	id = $(this).data('id');
 										var $form = $('#edit-family form');
 										$form.attr('action', $form.data('action') + $(this).data('id'));
+
 										$.ajax({
 											url: $('html').data('path') + '/api/family/' + $(this).data('id'),
 											type: 'GET',
@@ -287,9 +297,9 @@
 												panels.moveIn($('.loading'));
 											}.bind(this),
 											success: function (response) {
-												$form.find('#family-name').val(response.data.name);
+												$form.find('#family-name').val(response.data[0].name);
 											},
-											error: function(a, b, c) { error(a, b, c, this); }.bind(this),
+											error: function(a, b, c) { error(a, b, c, this); }.bind($form),
 											complete:	function() {
 												panels.moveOut($('.loading'));
 												$form.unbind().submit(function(e) {
@@ -324,7 +334,7 @@
 							});
 
 							$.ajax({
-								url: $('html').data('path') + '/api/people/',
+								url: $('html').data('path') + '/api/people',
 								type: 'GET',
 								beforeSend:	function() {
 									panels.moveIn($('.loading'));
@@ -333,7 +343,7 @@
 								success: function (response) {
 									$.each(response.data, function(i, person) {
 										$('.people').append('<div class="card"><div class="card-content">' +
-												'<button class="load button is-link" data-load="edit-person" data-id="' +
+												'<button class="load button is-link is-pulled-right edit-person" data-id="' +
 												person.id + '">Edit</button><strong>' + person.name + '</strong></div></div>');
 									});
 								},
@@ -342,9 +352,13 @@
 									panels.moveOut($('.loading'));
 
 									$('.edit-person').click(function() {
-										var	id = $(this).data('id');
+										$('#edit-person').addClass('is-active').find('.modal-close').click(function() {
+											$('#edit-person').removeClass('is-active');
+										});
+										var id = $(this).data('id');
 										var $form = $('#edit-person form');
 										$form.attr('action', $form.data('action') + $(this).data('id'));
+
 										$.ajax({
 											url: $('html').data('path') + '/api/people/' + $(this).data('id'),
 											type: 'GET',
@@ -352,10 +366,12 @@
 												panels.moveIn($('.loading'));
 											}.bind(this),
 											success: function (response) {
-												$form.find('#person-name').val(response.data.name);
-												$form.find('#person-family').val(response.data.family);
+												$form.find('#person-name').val(response.data[0].name);
+												if (response.data[0].family) {
+													$form.find('#person-family').val(response.data[0].family);
+												}
 											},
-											error: function(a, b, c) { error(a, b, c, this); }.bind(this),
+											error: function(a, b, c) { error(a, b, c, this); }.bind($form),
 											complete:	function() {
 												panels.moveOut($('.loading'));
 												$form.unbind().submit(function(e) {
@@ -461,7 +477,7 @@
 						}
 				};
 
-				$('.is-fullheight').css({position: 'fixed', top: 0, width: '100%'}).each(function() {
+				$('.is-fullheight').css({position: 'fixed', top: 0, width: '100%', 'z-index': 5}).each(function() {
 					panels.moveOut($(this), function() {
 						$(this).removeClass('is-invisible');
 					}.bind(this));

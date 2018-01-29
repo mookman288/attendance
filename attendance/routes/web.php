@@ -115,6 +115,30 @@ $router -> get('/api/family/{id}', function(Request $request, $id = 0) use ($rou
 	return response() -> json(['data' => app('db') -> select('SELECT * FROM family WHERE id = ?', [$id])]);
 });
 
+$router -> put('/api/family/{id}', function(Request $request, $id = 0) use ($router) {
+	//If there is no name.
+	if (!$request -> name) {
+		return response("You must provide the family's name.", 400);
+	} else {
+		//Get the post vars.
+		$name = filter_var($request -> name, FILTER_SANITIZE_STRING);
+
+		//Validate.
+		if (count(app('db') -> select('SELECT * FROM family WHERE id = ?', [$id])) < 1) {
+			return response("That family does not exist.", 400);
+		} elseif (count(app('db') -> select('SELECT * FROM family WHERE name = ? AND id != ?', [$name, $id])) > 0) {
+			return response("A family already exists with this name, try including a name hyphenation.", 400);
+		} else {
+			//If the system fails to edit the family.
+			if (!app('db') -> update("UPDATE family SET name = ? WHERE id = ?", [$name, $id])) {
+				return response("Failed to edit this family.", 500);
+			} else {
+				return response() -> json(['message' => 'This family was edited.']);
+			}
+		}
+	}
+});
+
 $router -> get('/api/family', function(Request $request) use ($router) {
 	return response() -> json(['data' => app('db') -> select('SELECT * FROM family ORDER BY name ASC')]);
 });
@@ -143,11 +167,36 @@ $router -> post('/api/family', function(Request $request) use ($router) {
 
 $router -> get('/api/people/{id}', function(Request $request, $id = 0) use ($router) {
 	$id = filter_var($id, FILTER_SANITIZE_NUMBER_INT);
-	return response() -> json(['data' => app('db') -> select('SELECT * FROM person WHERE id = ?', [$id])]);
+	return response() -> json(['data' => app('db') -> select('SELECT * FROM people WHERE id = ?', [$id])]);
+});
+
+$router -> put('/api/people/{id}', function(Request $request, $id = 0) use ($router) {
+	//If there is no name.
+	if (!$request -> name) {
+		return response("You must provide the person's name.", 400);
+	} else {
+		//Get the post vars.
+		$name = filter_var($request -> name, FILTER_SANITIZE_STRING);
+		$family = filter_var($request -> family, FILTER_SANITIZE_NUMBER_INT);
+
+		//Validate.
+		if (count(app('db') -> select('SELECT * FROM people WHERE id = ?', [$id])) < 1) {
+			return response("That person does not exist.", 400);
+		} elseif (count(app('db') -> select('SELECT * FROM people WHERE name = ? AND id != ?', [$name, $id])) > 0) {
+			return response("A person already exists with that name, try including a nickname in paranthesis.", 400);
+		} else {
+			//If the system fails to edit the person.
+			if (!app('db') -> update("UPDATE people SET name = ?, family = ? WHERE id = ?", [$name, $family, $id])) {
+				return response("Failed to edit this person.", 500);
+			} else {
+				return response() -> json(['message' => 'This person was edited.']);
+			}
+		}
+	}
 });
 
 $router -> get('/api/people', function(Request $request) use ($router) {
-	return response() -> json(['data' => app('db') -> select('SELECT * FROM person ORDER BY name ASC')]);
+	return response() -> json(['data' => app('db') -> select('SELECT * FROM people ORDER BY name ASC')]);
 });
 
 $router -> post('/api/people', function(Request $request) use ($router) {
