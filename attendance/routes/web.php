@@ -31,7 +31,7 @@ $router -> get('/api/attendance/{ev}', function(Request $request, $ev = 0) use (
 		//Get people and family information.
 		$people = app('db') -> select('SELECT p.id AS id, p.name as name, f.name as family '
 				. 'FROM people AS p '
-				. 'LEFT JOIN family AS f ON f.id = p.family');
+				. 'LEFT JOIN family AS f ON f.id = p.family ORDER BY family, name ASC');
 
 		//Get attendance.
 		$attendance = app('db') -> select('SELECT * FROM attendance WHERE event = ?', [$ev]);
@@ -108,6 +108,46 @@ $router -> post('/api/event', function(Request $request) use ($router) {
 			}
 		}
 	}
+});
+
+$router -> get('/api/family/{id}', function(Request $request, $id = 0) use ($router) {
+	$id = filter_var($id, FILTER_SANITIZE_NUMBER_INT);
+	return response() -> json(['data' => app('db') -> select('SELECT * FROM family WHERE id = ?', [$id])]);
+});
+
+$router -> get('/api/family', function(Request $request) use ($router) {
+	return response() -> json(['data' => app('db') -> select('SELECT * FROM family ORDER BY name ASC')]);
+});
+
+$router -> post('/api/family', function(Request $request) use ($router) {
+	//If there is no name.
+	if (!$request -> name) {
+		return response("You must provide the family's name.", 400);
+	} else {
+		//Get the post vars.
+		$name = filter_var($request -> name, FILTER_SANITIZE_STRING);
+
+		//If there are existing people with that name.
+		if (count(app('db') -> select('SELECT * FROM family WHERE name = ?', [$name])) > 0) {
+			return response("A family already exists with this name, try including a name hyphenation.", 400);
+		} else {
+			//If the system fails to submit the person.
+			if (!app('db') -> insert("INSERT INTO family (name) VALUES (?)", [$name])) {
+				return response("Failed to add this family.", 500);
+			} else {
+				return response() -> json(['message' => 'This family was added.']);
+			}
+		}
+	}
+});
+
+$router -> get('/api/people/{id}', function(Request $request, $id = 0) use ($router) {
+	$id = filter_var($id, FILTER_SANITIZE_NUMBER_INT);
+	return response() -> json(['data' => app('db') -> select('SELECT * FROM person WHERE id = ?', [$id])]);
+});
+
+$router -> get('/api/people', function(Request $request) use ($router) {
+	return response() -> json(['data' => app('db') -> select('SELECT * FROM person ORDER BY name ASC')]);
 });
 
 $router -> post('/api/people', function(Request $request) use ($router) {

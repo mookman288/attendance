@@ -39,14 +39,20 @@
 				<nav class="navbar is-fixed hero is-primary">
 					<ul class="navbar-brand">
 						<li class="navbar-item"><h1>Attendance</h1></li>
-						<li class="navbar-item"><button class="load button is-warning" data-load="add-event">
+						<li class="navbar-item"><button class="load button is-link" data-load="add-event">
 							Add Event
 						</button></li>
 						<li class="navbar-item"><button class="load button is-info" data-load="add-family">
 							Add Family
 						</button></li>
-						<li class="navbar-item"><button class="load button is-link" data-load="add-people">
+						<li class="navbar-item"><button class="load button is-warning" data-load="add-family">
+							Edit Families
+						</button></li>
+						<li class="navbar-item"><button class="load button is-info" data-load="add-people">
 							Add Person
+						</button></li>
+						<li class="navbar-item"><button class="load button is-warning" data-load="add-family">
+							Edit People
 						</button></li>
 					</ul>
 				</nav>
@@ -144,7 +150,7 @@
 						<label for="family" class="label">Family</label>
 						<div class="control">
 							<div class="select">
-								<select name="family" class="input">
+								<select id="family" name="family" class="input families">
 									<option value="">None</option>
 								<?php foreach($families as $family) { ?>
 									<option value="<?php print($family -> id); ?>"><?php print($family -> name); ?></option>
@@ -161,19 +167,81 @@
 				</form>
 			</div>
 		</div>
+		<div id="edit-people" class="hero is-fullheight is-white is-invisible">
+			<div class="section">
+				<button class="delete button is-danger is-pulled-right">Close</button>
+				<h2 class="subtitle">People</h2>
+				<div class="people"></div>
+			</div>
+		</div>
+		<div id="edit-person" class="hero is-fullheight is-white is-invisible">
+			<div class="section">
+				<button class="delete button is-danger is-pulled-right">Close</button>
+				<h2 class="subtitle"></h2>
+				<form method="put" data-action="<?php printf("%s/api/people/", $path); ?>">
+					<div class="field">
+						<label for="person-name" class="label">Full Name</label>
+						<div class="control">
+							<input id="person-name" class="input" name="name" type="text" />
+						</div>
+					</div>
+					<div class="field">
+						<label for="person-family" class="label">Family</label>
+						<div class="control">
+							<div class="select">
+								<select id="person-family" name="family" class="input families">
+									<option value="">None</option>
+								</select>
+							</div>
+						</div>
+					</div>
+					<div class="field is-grouped">
+						<div class="control">
+							<button class="button is-warning">Submit</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+		<div id="edit-families" class="hero is-fullheight is-white is-invisible">
+			<div class="section">
+				<button class="delete button is-danger is-pulled-right">Close</button>
+				<h2 class="subtitle">Families</h2>
+				<div class="family"></div>
+			</div>
+		</div>
+		<div id="edit-family" class="hero is-fullheight is-white is-invisible">
+			<div class="section">
+				<button class="delete button is-danger is-pulled-right">Close</button>
+				<h2 class="subtitle"></h2>
+				<form method="post" data-action="<?php printf("%s/api/family/", $path); ?>">
+					<div class="field">
+						<label for="family-name" class="label">Last Name</label>
+						<div class="control">
+							<input id="family-name" class="input" name="name" type="text" />
+						</div>
+					</div>
+					<div class="field is-grouped">
+						<div class="control">
+							<button class="button is-warning">Edit</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
 		<div class="loading is-invisible hero is-fullheight"></div>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 		<script type="text/javascript">
 			(function($) {
-				//Utilities.
-				var error = function(xhr, textStatus, thrownError) {
-					$(this).prepend('<div class="message is-danger"><div class="message-header"><p>Error' +
+				var error = function(xhr, textStatus, thrownError, form) {
+					$(form).prepend('<div class="message is-danger"><div class="message-header"><p>Error' +
 							'</p></div><div class="message-body">' + xhr.responseText + '</div></div>');
 
 					console.error('There was an error processing the request.');
 					console.error('XHR/Error: [' + textStatus + '] ' + thrownError + ': ' +
 							xhr.responseText);
 				};
+
 				var	panels = {
 						moveOut: function($s, cb) {
 							$s.stop().animate({left: $('html').outerWidth(), opacity: 0}, 400, 'swing', cb);
@@ -182,14 +250,151 @@
 							$s.stop().show().animate({left: 0, opacity: 1}, 400, 'swing', cb);
 						}
 				};
-				var attendance = {
+
+				var refresh = {
 						update: function() {
+							//Family.
+							$.ajax({
+								url: $('html').data('path') + '/api/family/',
+								type: 'GET',
+								beforeSend:	function() {
+									panels.moveIn($('.loading'));
+									$('.family, select.families').html('');
+								},
+								success: function (response) {
+									$('select.families').append('<option value="">None</option>');
+									$.each(response.data, function(i, family) {
+										$('.family').append('<div class="card"><div class="card-content">' +
+												'<button class="load button is-link" data-load="edit-family" data-id="' +
+												family.id + '">Edit</button><strong>' + family.name + '</strong></div></div>');
+
+										$('select.families').append('<option value="' + family.id + '">' + family.name +
+												'</option>');
+									});
+								},
+								error: function(a, b, c) { error(a, b, c, this); }.bind(this),
+								complete:	function() {
+									panels.moveOut($('.loading'));
+
+									$('.edit-family').click(function() {
+										var	id = $(this).data('id');
+										var $form = $('#edit-family form');
+										$form.attr('action', $form.data('action') + $(this).data('id'));
+										$.ajax({
+											url: $('html').data('path') + '/api/family/' + $(this).data('id'),
+											type: 'GET',
+											beforeSend:	function() {
+												panels.moveIn($('.loading'));
+											}.bind(this),
+											success: function (response) {
+												$form.find('#family-name').val(response.data.name);
+											},
+											error: function(a, b, c) { error(a, b, c, this); }.bind(this),
+											complete:	function() {
+												panels.moveOut($('.loading'));
+												$form.unbind().submit(function(e) {
+													e.preventDefault();
+
+													$.ajax({
+														url: $(this).attr('action'),
+														type: $(this).attr('method'),
+														data: $(this).serialize(),
+														beforeSend:	function() {
+															$(this).find('.message').remove();
+															panels.moveIn($('.loading'));
+														}.bind(this),
+														success: function (response) {
+															$(this).prepend('<div class="message is-success">' +
+																	'<div class="message-header"><p>Success</p></div>' +
+																	'<div class="message-body">' + response.message +
+																	'</div></div>');
+
+															refresh.update();
+														}.bind(this),
+														error: function(a, b, c) { error(a, b, c, this); }.bind(this),
+														complete:	function() {
+															panels.moveOut($('.loading'));
+														}
+													});
+												});
+											}
+										});
+									});
+								}
+							});
+
+							$.ajax({
+								url: $('html').data('path') + '/api/people/',
+								type: 'GET',
+								beforeSend:	function() {
+									panels.moveIn($('.loading'));
+									$('.people').html('');
+								},
+								success: function (response) {
+									$.each(response.data, function(i, person) {
+										$('.people').append('<div class="card"><div class="card-content">' +
+												'<button class="load button is-link" data-load="edit-person" data-id="' +
+												person.id + '">Edit</button><strong>' + person.name + '</strong></div></div>');
+									});
+								},
+								error: function(a, b, c) { error(a, b, c, this); }.bind(this),
+								complete:	function() {
+									panels.moveOut($('.loading'));
+
+									$('.edit-person').click(function() {
+										var	id = $(this).data('id');
+										var $form = $('#edit-person form');
+										$form.attr('action', $form.data('action') + $(this).data('id'));
+										$.ajax({
+											url: $('html').data('path') + '/api/people/' + $(this).data('id'),
+											type: 'GET',
+											beforeSend:	function() {
+												panels.moveIn($('.loading'));
+											}.bind(this),
+											success: function (response) {
+												$form.find('#person-name').val(response.data.name);
+												$form.find('#person-family').val(response.data.family);
+											},
+											error: function(a, b, c) { error(a, b, c, this); }.bind(this),
+											complete:	function() {
+												panels.moveOut($('.loading'));
+												$form.unbind().submit(function(e) {
+													e.preventDefault();
+
+													$.ajax({
+														url: $(this).attr('action'),
+														type: $(this).attr('method'),
+														data: $(this).serialize(),
+														beforeSend:	function() {
+															$(this).find('.message').remove();
+															panels.moveIn($('.loading'));
+														}.bind(this),
+														success: function (response) {
+															$(this).prepend('<div class="message is-success">' +
+																	'<div class="message-header"><p>Success</p></div>' +
+																	'<div class="message-body">' + response.message +
+																	'</div></div>');
+
+															refresh.update();
+														}.bind(this),
+														error: function(a, b, c) { error(a, b, c, this); }.bind(this),
+														complete:	function() {
+															panels.moveOut($('.loading'));
+														}
+													});
+												});
+											}
+										});
+									});
+								}
+							});
+
 							$.ajax({
 								url: $('html').data('path') + '/api/attendance/' + $('.attendance').data('event'),
 								type: 'GET',
 								beforeSend:	function() {
 									panels.moveIn($('.loading'));
-									$('.attendance').html();
+									$('.attendance').html('');
 									$('.attendance').find('.message').remove();
 								}.bind(this),
 								success: function (response) {
@@ -217,7 +422,7 @@
 								complete:	function() {
 									panels.moveOut($('.loading'));
 
-									$('form.attend').submit(function(e) {
+									$('form.attend').unbind().submit(function(e) {
 										e.preventDefault();
 
 										$.ajax({
@@ -245,8 +450,16 @@
 									});
 								}
 							});
+
+							$('.load').unbind().click(function() {
+								panels.moveIn($('#' + $(this).data('load')));
+							});
+
+							$('.delete').click(function() {
+								panels.moveOut($('#' + $(this).closest('.hero').attr('id')));
+							});
 						}
-				}
+				};
 
 				$('.is-fullheight').css({position: 'fixed', top: 0, width: '100%'}).each(function() {
 					panels.moveOut($(this), function() {
@@ -254,15 +467,7 @@
 					}.bind(this));
 				});
 
-				attendance.update();
-
-				$('.load').click(function() {
-					panels.moveIn($('#' + $(this).data('load')));
-				});
-
-				$('.delete').click(function() {
-					panels.moveOut($('#' + $(this).closest('.hero').attr('id')));
-				});
+				refresh.update();
 
 				$('form').submit(function(e) {
 					e.preventDefault();
@@ -278,7 +483,7 @@
 							$(this).prepend('<div class="message is-success"><div class="message-header"><p>' +
 									'Success' + '</p></div><div class="message-body">' + response.message + '</div></div>');
 
-							attendance.update();
+							refresh.update();
 						}.bind(this),
 						error: function(a, b, c) { error(a, b, c, this); }.bind(this),
 						complete:	function() {
