@@ -14,10 +14,10 @@ class CreateTableAttendance extends Migration
     public function up()
     {
         Schema::create('attendance', function (Blueprint $table) {
-            $table->increments('id');
+            $table -> increments('id');
             $table -> integer('event');
             $table -> integer('person');
-            $table->timestamps();
+            $table -> timestamps();
         });
     }
 

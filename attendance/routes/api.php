@@ -11,6 +11,3 @@
 |
 */
 
-$router -> post('/api/people', function () use ($router) {
-
-});
