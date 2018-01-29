@@ -69,8 +69,7 @@
 				</nav>
 			</header>
 			<section class="section">
-				<form method="get" action="<?php printf("%s/api/event", $path); ?>" class="update is-pulled-right"
-					data-id="id" data-label="date, name">
+				<form method="get" action="<?php printf("%s/api/event", $path); ?>" class="update-event is-pulled-right">
 					<div class="field">
 						<div class="control">
 							<div class="select">
@@ -270,6 +269,41 @@
 
 				var refresh = {
 						update: function() {
+							$('section.section').children('.message').remove();
+
+							//Events.
+							$.ajax({
+								url: $('html').data('path') + '/api/event',
+								type: 'GET',
+								beforeSend:	function() {
+									panels.moveIn($('.loading'));
+									$('#event').html('');
+								},
+								success: function (response) {
+									$('#event').append('<option value="">Choose Event</option>');
+									$.each(response.data, function(i, event) {
+										var dateTime = new Date(event.date * 1000);
+										var day = dateTime.getDate();
+										var month = dateTime.getMonth() + 1;
+										var year = dateTime.getFullYear();
+
+										$('#event').append('<option value="' + event.id + '">' + event.name +
+												' (' + year + '-' + ('0' + month).slice(-2) + '-' + ('0' + day).slice(-2) +
+												')</option>');
+									});
+								},
+								error: function(a, b, c) { error(a, b, c, $('section.section')); },
+								complete:	function() {
+									$('#event').change(function() {
+										if ($(this).val() > 0) {
+											$('.attendance').data('event', $(this).val());
+
+											refresh.update();
+										}
+									});
+								}
+							});
+
 							//Family.
 							$.ajax({
 								url: $('html').data('path') + '/api/family',
@@ -289,7 +323,7 @@
 												'</option>');
 									});
 								},
-								error: function(a, b, c) { error(a, b, c, this); }.bind(this),
+								error: function(a, b, c) { error(a, b, c, $('section.section')); },
 								complete:	function() {
 									panels.moveOut($('.loading'));
 
@@ -344,6 +378,7 @@
 								}
 							});
 
+							//People.
 							$.ajax({
 								url: $('html').data('path') + '/api/people',
 								type: 'GET',
@@ -358,7 +393,7 @@
 												person.id + '">Edit</button><strong>' + person.name + '</strong></div></div>');
 									});
 								},
-								error: function(a, b, c) { error(a, b, c, this); }.bind(this),
+								error: function(a, b, c) { error(a, b, c, $('section.section')); },
 								complete:	function() {
 									panels.moveOut($('.loading'));
 
@@ -416,6 +451,7 @@
 								}
 							});
 
+							//Attendance.
 							$.ajax({
 								url: $('html').data('path') + '/api/attendance/' + $('.attendance').data('event'),
 								type: 'GET',
@@ -445,7 +481,7 @@
 										$('.attendance').append(html);
 									});
 								},
-								error: function(a, b, c) { error(a, b, c, this); }.bind(this),
+								error: function(a, b, c) { error(a, b, c, $('section.section')); },
 								complete:	function() {
 									panels.moveOut($('.loading'));
 
@@ -492,7 +528,7 @@
 					$('.navbar-menu').toggleClass('is-active');
 				});
 
-				$('.is-fullheight').css({position: 'fixed', top: 0, width: '100%', 'z-index': 5}).each(function() {
+				$('.is-fullheight').css({position: 'fixed', top: 0, width: '100%', 'z-index': 50}).each(function() {
 					panels.moveOut($(this), function() {
 						$(this).removeClass('is-invisible');
 					}.bind(this));
